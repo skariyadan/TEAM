@@ -1,0 +1,41 @@
+Columbus Instruments Device Interface Version 1.5
+Started On:,12/04/20 13:33:52
+
+[Experiment Setup Info]
+Program Path:,C:\Program Files (x86)\CI Multi-Device Interface
+Data Path:,C:\Program Files (x86)\CI Multi-Device Interface\Data
+Experiment File Name:,C:\Users\Julio\Downloads\SreeSampleData.csv
+Session Interval:,00:00:15
+Experiment Duration:,0
+Staggered Start Enable:,False
+[Channel Setup Info]
+Cage 2,
+[End Channel Setup Info]
+[Experiment Comments]
+Default Experiment Comments
+[Experiment Comments End]
+[Experiment Data]
+Int,Cage,Time,Wheel (counts),Wheel Accum (counts),
+0,2,12/04/20 13:34:00,0,0,
+1,2,12/04/20 13:34:15,0,0,
+2,2,12/04/20 13:34:30,4,4,
+3,2,12/04/20 13:34:45,22,26,
+4,2,12/04/20 13:35:00,0,26,
+5,2,12/04/20 13:35:15,0,26,
+6,2,12/04/20 13:35:30,0,26,
+7,2,12/04/20 13:35:45,9,35,
+8,2,12/04/20 13:36:00,19,54,
+9,2,12/04/20 13:36:15,42,96,
+10,2,12/04/20 13:36:30,29,125,
+11,2,12/04/20 13:36:45,38,163,
+12,2,12/04/20 13:37:00,36,199,
+13,2,12/04/20 13:37:15,32,231,
+14,2,12/04/20 13:37:30,24,255,
+15,2,12/04/20 13:37:45,42,297,
+16,2,12/04/20 13:38:00,25,322,
+17,2,12/04/20 13:38:15,0,322,
+18,2,12/04/20 13:38:30,0,322,
+19,2,12/04/20 13:38:45,9,331,
+20,2,12/04/20 13:39:00,58,389,
+21,2,12/04/20 13:39:15,13,402,
+22,2,12/04/20 13:39:30,16,418,
