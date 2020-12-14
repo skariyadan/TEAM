@@ -1,19 +1,39 @@
 import tkinter as tk
 from PIL import ImageTk, Image
 import wx
-
+from PySide6 import QtWidgets
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QPushButton
+from PySide6.QtGui import QIcon, QPixmap
 # will set up GUI later after figure out main data merging
 
-class Team_GUI(wx.App):
+class Team_GUI():
 
     def __init__(self):
-        super().__init__()
-        self.root = wx.Frame(parent=None, title="TEAM")
-        icon = wx.Icon()
-        icon.CopyFromBitmap(wx.Bitmap("resources/mouse.ico", wx.BITMAP_TYPE_ANY))
-        self.root.SetIcon(icon)
-        self.root.Set
-        self.root.Show()
+        self.app = QApplication()
+        self.app.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.main = self.front()
+        self.main.show()
+
+
+    def front(self):
+        window = QMainWindow()
+        window.setGeometry(500, 500, 500, 500)
+        window.setWindowTitle("TEAM")
+        window.setWindowIcon(QIcon('resources/mouse.PNG'))
+        window.setStyleSheet("background-color: #03795E")
+        grid = QGridLayout()
+        logo_label = QLabel(window)
+        logo_label.setPixmap(QPixmap('resources/mouse').scaled(700,700))
+        grid.addWidget(logo_label, 1, 1)
+
+        central = QWidget()
+        central.setLayout(grid)
+        window.setCentralWidget(central)
+        return window
+
+    def run(self):
+        self.app.exec_()
+
 
 
 

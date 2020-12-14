@@ -1,6 +1,8 @@
 import pandas as pd
 from csv import reader
 import numpy as np
+import math
+import xlsxwriter
 
 class Merger():
 
@@ -69,7 +71,7 @@ class Merger():
         for cage in cages:
             ci[cage] = self.ci.loc[self.ci.Cage == cage]
             rf[cage] = self.rfid.loc[self.rfid.Cage == cage]
-            self.merged[cage] = pd.DataFrame(columns=['ID','Start Time', 'End Time', 'Wheel (counts)'])
+            self.merged[cage] = pd.DataFrame(columns=['ID','Start Time', 'End Time', 'Wheel (counts)', 'Total Distance Traveled (ft)', 'Velocity (ft/hr)'])
         self.ci = ci
         self.rfid = rf
 
@@ -84,14 +86,39 @@ class Merger():
                 end = pair.iloc[1, 1]
                 mask = (self.ci[cage]['Time']>=start) & (self.ci[cage]['Time']<=end)
                 wheelcount = self.ci[cage].loc[mask]['Wheel (counts)'].sum()
-                self.merged[cage] = self.merged[cage].append({'ID': id, 'Start Time': start, 'End Time': end, 'Wheel (counts)': wheelcount}, ignore_index=True)
+                distance = wheelcount * (29/8) * math.pi
+                velocity = distance / (pd.Timedelta(end - start).seconds / 3600.0)
+                self.merged[cage] = self.merged[cage].append({'ID': id, 'Start Time': start, 'End Time': end, 'Wheel (counts)': wheelcount, 'Total Distance Traveled (ft)': distance, 'Velocity (ft/hr)': velocity}, ignore_index=True)
+
+    def cumulative(self, cage_data):
+        by_mouse = pd.DataFrame(columns = ['ID', 'Cumulative Time (hr)', 'Cumulative Wheel (counts)', 'Cumulative Distance Traveled (ft)', 'Average Velocity (ft/hr)'])
+        mice = cage_data['ID'].unique().tolist()
+        for mouse in mice:
+            mouse_cage_data = cage_data[cage_data['ID'] == mouse]
+            time = (mouse_cage_data["End Time"].sub(mouse_cage_data["Start Time"], fill_value = 0).sum().seconds) / 3600.0
+            wheelcount = mouse_cage_data['Wheel (counts)'].sum()
+            distance = wheelcount * (29/8) * math.pi
+            velocity = distance / time
+            by_mouse = by_mouse.append({'ID': mouse, 'Cumulative Time (hr)' : time, 'Cumulative Wheel (counts)' : wheelcount, 'Cumulative Distance Traveled (ft)' : distance, 'Average Velocity (ft/hr)': velocity}, ignore_index = True)
+        return by_mouse
 
     def write_to_file(self):
         # this function needs to be rewritten so there'll be a single file with multiple sheets
         # with each sheet represents a cage also with the raw data vs calculations julio wants
+        writer = pd.ExcelWriter('MouseData.xlsx', engine = 'xlsxwriter')
+        workbook = writer.book
         for cage in self.merged:
-            self.merged[cage].to_csv('Cage'+str(cage)+'.csv', index=False)
-
+            worksheet = workbook.add_worksheet('Cage'+ str(cage) + '-Raw')
+            writer.sheets['Cage'+ str(cage) + '-Raw'] = worksheet
+            worksheet.write_string(0,0, 'Cage'+ str(cage) + " Raw Data")
+            self.merged[cage].to_excel(writer, sheet_name='Cage'+ str(cage) + '-Raw', startrow=1, startcol=0, index=False)
+            worksheet = workbook.add_worksheet('Cage' + str(cage) + '-Calculations')
+            writer.sheets['Cage' + str(cage) + '-Calculations'] = worksheet
+            worksheet.write_string(0, 0, 'Cage' + str(cage) + " Data (With Calculations)")
+            self.merged[cage].to_excel(writer, sheet_name='Cage' + str(cage) + '-Calculations', startrow=1, startcol=0, index=False)
+            worksheet.write_string(self.merged[cage].shape[0] + 4, 0, "Cumulative Data")
+            self.cumulative(self.merged[cage]).to_excel(writer, sheet_name='Cage' + str(cage) + '-Calculations', startrow=self.merged[cage].shape[0] + 5, startcol=0, index=False)
+        writer.save()
 
 
 

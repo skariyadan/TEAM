@@ -4,9 +4,8 @@ import merger
 import wx
 
 def main():
-    pass
     # app = gui.Team_GUI()
-    # app.MainLoop()
+    # app.run()
     mg = merger.Merger('resources/SreeSampleData.csv', 'resources/SreeRFIDData.csv')
     mg.merge()
 
