@@ -3,6 +3,8 @@ from csv import reader
 import numpy as np
 import math
 import xlsxwriter
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 class Merger():
 
@@ -71,7 +73,7 @@ class Merger():
         for cage in cages:
             ci[cage] = self.ci.loc[self.ci.Cage == cage]
             rf[cage] = self.rfid.loc[self.rfid.Cage == cage]
-            self.merged[cage] = pd.DataFrame(columns=['ID','Start Time', 'End Time', 'Wheel (counts)', 'Total Distance Traveled (ft)', 'Velocity (ft/hr)'])
+            self.merged[cage] = pd.DataFrame(columns=['ID','Start Time', 'End Time', 'Wheel (counts)', 'Total Distance Traveled (km)', 'Velocity (km/hr)'])
         self.ci = ci
         self.rfid = rf
 
@@ -86,21 +88,61 @@ class Merger():
                 end = pair.iloc[1, 1]
                 mask = (self.ci[cage]['Time']>=start) & (self.ci[cage]['Time']<=end)
                 wheelcount = self.ci[cage].loc[mask]['Wheel (counts)'].sum()
-                distance = wheelcount * (29/8) * math.pi
-                velocity = distance / (pd.Timedelta(end - start).seconds / 3600.0)
-                self.merged[cage] = self.merged[cage].append({'ID': id, 'Start Time': start, 'End Time': end, 'Wheel (counts)': wheelcount, 'Total Distance Traveled (ft)': distance, 'Velocity (ft/hr)': velocity}, ignore_index=True)
+                distance = wheelcount * (29/8) * math.pi * 0.00000254
+                velocity = (distance / (pd.Timedelta(end - start).seconds / 3600.0))
+                self.merged[cage] = self.merged[cage].append({'ID': id, 'Start Time': start, 'End Time': end, 'Wheel (counts)': wheelcount, 'Total Distance Traveled (km)': distance, 'Velocity (km/hr)': velocity}, ignore_index=True)
 
-    def cumulative(self, cage_data):
-        by_mouse = pd.DataFrame(columns = ['ID', 'Cumulative Time (hr)', 'Cumulative Wheel (counts)', 'Cumulative Distance Traveled (ft)', 'Average Velocity (ft/hr)'])
-        mice = cage_data['ID'].unique().tolist()
+    def cumulative(self, cage):
+        by_mouse = pd.DataFrame(columns = ['ID', 'Cumulative Time (hr)', 'Cumulative Wheel (counts)', 'Cumulative Distance Traveled (km)', 'Average Velocity (km/hr)'])
+        mice = self.merged[cage]['ID'].unique().tolist()
         for mouse in mice:
-            mouse_cage_data = cage_data[cage_data['ID'] == mouse]
-            time = (mouse_cage_data["End Time"].sub(mouse_cage_data["Start Time"], fill_value = 0).sum().seconds) / 3600.0
+            mouse_cage_data = self.merged[cage][self.merged[cage]['ID'] == mouse]
+            time = mouse_cage_data["End Time"].sub(mouse_cage_data["Start Time"], fill_value = 0).sum().seconds / 3600.0
             wheelcount = mouse_cage_data['Wheel (counts)'].sum()
-            distance = wheelcount * (29/8) * math.pi
-            velocity = distance / time
-            by_mouse = by_mouse.append({'ID': mouse, 'Cumulative Time (hr)' : time, 'Cumulative Wheel (counts)' : wheelcount, 'Cumulative Distance Traveled (ft)' : distance, 'Average Velocity (ft/hr)': velocity}, ignore_index = True)
+            distance = wheelcount * (29/8) * math.pi * 0.00000254
+            velocity = (distance / time)
+            by_mouse = by_mouse.append({'ID': mouse, 'Cumulative Time (hr)' : time, 'Cumulative Wheel (counts)' : wheelcount, 'Cumulative Distance Traveled (km)' : distance, 'Average Velocity (km/hr)': velocity}, ignore_index = True)
         return by_mouse
+
+    def graph(self, cage):
+        mice = self.merged[cage]['ID'].unique().tolist()
+        time_points = self.ci[cage]['Time'].tolist()
+        fig, ax = plt.subplots()
+        ax.set(title = 'Mice Activity in Cage ' + str(cage) + '\nfrom ' + time_points[0].strftime('%m-%d-%Y') + '-' + time_points[-1].strftime("%m-%d-%Y"),
+               xlabel = 'Time',
+               ylabel = 'Activity Level')
+        if (time_points[-1]-time_points[0]).days <= 0:
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%y\n%H:%M"))
+            ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=20))
+            ax.xaxis.set_minor_formatter(mdates.DateFormatter("%H:%M"))
+            ax.xaxis.set_minor_locator(mdates.MinuteLocator(interval=2))
+        else:
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%y"))
+            ax.xaxis.set_major_locator(mdates.DayLocator())
+            ax.xaxis.set_minor_formatter(mdates.DateFormatter("%H:%M"))
+            ax.xaxis.set_minor_locator(mdates.HourLocator(interval=4))
+        plt.xticks(rotation=90, fontsize=6)
+        plt.setp(ax.xaxis.get_minorticklabels(), rotation=90, fontsize=5)
+        ax.set_xlim(time_points[0], time_points[-1])
+        for mouse in mice:
+            mouse_data = {t : 0 for t in time_points}
+            mouse_cage_data = self.merged[cage][self.merged[cage]['ID'] == mouse]
+            for idx, row in mouse_cage_data.iterrows():
+                start = row['Start Time']
+                end = row['End Time']
+                mouse_time_intervals = self.ci[cage].loc[(self.ci[cage]['Time']>=start) & (self.ci[cage]['Time']<=end)]
+                for mt_idx, mt_row in mouse_time_intervals.iterrows():
+                    mouse_data[mt_row["Time"]] = mt_row["Wheel (counts)"]
+            plt.plot(time_points, list(mouse_data.values()), label=mouse)
+        plt.legend(bbox_to_anchor=(1.1,1.15), loc='upper right', fontsize='xx-small', title="Mice")
+        fig.subplots_adjust(right=0.9)
+        if len(list(ax.xaxis.get_ticklabels(minor=True))) >= 10:
+            [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0 and i != len(ax.xaxis.get_ticklabels()) -1 ]
+            [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels(minor=True)) if i % 2 == 0]
+        if len(list(plt.xticks()[0])) > 1:
+            diff = (list(plt.xticks()[0])[-1] - list(plt.xticks()[0])[0]) / (len(list(plt.xticks()[0])) - 1)
+            plt.xticks(list(plt.xticks()[0]) + [list(plt.xticks()[0])[0] - diff, list(plt.xticks()[0])[-1] + diff])
+        plt.savefig("plot.png")
 
     def write_to_file(self):
         # this function needs to be rewritten so there'll be a single file with multiple sheets
@@ -109,7 +151,7 @@ class Merger():
         workbook = writer.book
         for cage in self.merged:
             worksheet = workbook.add_worksheet('Cage'+ str(cage) + '-Raw')
-            writer.sheets['Cage'+ str(cage) + '-Raw'] = worksheet
+            writer.sheets['Cage' + str(cage) + '-Raw'] = worksheet
             worksheet.write_string(0,0, 'Cage'+ str(cage) + " Raw Data")
             self.merged[cage].to_excel(writer, sheet_name='Cage'+ str(cage) + '-Raw', startrow=1, startcol=0, index=False)
             worksheet = workbook.add_worksheet('Cage' + str(cage) + '-Calculations')
@@ -117,8 +159,11 @@ class Merger():
             worksheet.write_string(0, 0, 'Cage' + str(cage) + " Data (With Calculations)")
             self.merged[cage].to_excel(writer, sheet_name='Cage' + str(cage) + '-Calculations', startrow=1, startcol=0, index=False)
             worksheet.write_string(self.merged[cage].shape[0] + 4, 0, "Cumulative Data")
-            self.cumulative(self.merged[cage]).to_excel(writer, sheet_name='Cage' + str(cage) + '-Calculations', startrow=self.merged[cage].shape[0] + 5, startcol=0, index=False)
+            self.cumulative(cage).to_excel(writer, sheet_name='Cage' + str(cage) + '-Calculations', startrow=self.merged[cage].shape[0] + 5, startcol=0, index=False)
+            self.graph(cage)
+            worksheet.insert_image(0, self.merged[cage].shape[1] + 5, "plot.png")
         writer.save()
+
 
 
 
