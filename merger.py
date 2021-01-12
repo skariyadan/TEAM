@@ -23,6 +23,7 @@ class Merger():
         self.split_by_cage()
         self.merging()
         self.write_to_file()
+        return 0
 
     def check_ci_file(self):
         # read the ci file check if exists

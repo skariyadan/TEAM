@@ -13,31 +13,31 @@ class Parser():
 
     def readTagsInitially(self):
         print("Scan mouse tags, hit Ctrl-C when you're done")
-        try:
-            with serial.Serial(self.port, 9600) as rfid_reader:
-                while True:
+        while True:
+            try:
+                with serial.Serial(self.port, 9600) as rfid_reader:
                     tag = rfid_reader.readline().decode('UTF-8').strip()
                     print(tag)
                     cage = input("Enter what number cage this mouse is for (numerical only): ")
                     self.IDToName[tag] = [int(cage), "Mouse" + str(self.mouseCount)]
                     self.mouseCount += 1
                     print(tag)
-        except KeyboardInterrupt:
-            pass
+            except KeyboardInterrupt:
+                return
 
 
     def scanId(self):
         print("Begin experiment, hit Ctrl-C when you're done")
-        try:
-            with serial.Serial(self.port, 9600) as rfid_reader:
-                while True:
+        while True:
+            try:
+                with serial.Serial(self.port, 9600) as rfid_reader:
                     id = rfid_reader.readline().decode('UTF-8').strip()
                     time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
                     cage = self.IDToName[id][0]
                     self.RFIDData = self.RFIDData.append({"Cage": cage, "Time":time, "ID": self.IDToName[id][1]}, ignore_index=True)
                     print(cage, time, id)
-        except KeyboardInterrupt:
-            pass
+            except KeyboardInterrupt:
+                return
 
 
     def run(self):
