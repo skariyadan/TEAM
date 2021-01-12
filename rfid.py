@@ -4,6 +4,7 @@ import pandas as pd #pip3 install pandas
 from datetime import datetime
 
 class Parser():
+
     def __init__(self):
         self.port = input('Enter serial port to read tags from: ')
         self.IDToName = {}
@@ -11,34 +12,40 @@ class Parser():
         self.mouseCount = 1
 
     def readTagsInitially(self):
-        print("Scan Tags hit Ctrl-C when you're done")
+        print("Scan mouse tags, hit Ctrl-C when you're done")
         try:
             with serial.Serial(self.port, 9600) as rfid_reader:
                 while True:
                     tag = rfid_reader.readline().decode('UTF-8').strip()
-                    self.IDToName[tag] = "Mouse" + str(self.mouseCount)
+                    print(tag)
+                    cage = input("Enter what number cage this mouse is for (numerical only): ")
+                    self.IDToName[tag] = [int(cage), "Mouse" + str(self.mouseCount)]
                     self.mouseCount += 1
                     print(tag)
         except KeyboardInterrupt:
             pass
 
+
     def scanId(self):
-        print("Scan Tags hit Ctrl-C when you're done")
+        print("Begin experiment, hit Ctrl-C when you're done")
         try:
             with serial.Serial(self.port, 9600) as rfid_reader:
                 while True:
                     id = rfid_reader.readline().decode('UTF-8').strip()
-                    time = datetime.now().strftime("%H:%M:%S")
-                    cage = 1 # lol
-                    self.RFIDData = self.RFIDData.append({"Cage": cage, "Time":time, "ID": id}, ignoreIndex=True)
+                    time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+                    cage = self.IDToName[id][0]
+                    self.RFIDData = self.RFIDData.append({"Cage": cage, "Time":time, "ID": self.IDToName[id][1]}, ignore_index=True)
                     print(cage, time, id)
         except KeyboardInterrupt:
             pass
 
+
     def run(self):
         self.readTagsInitially()
         self.scanId()
+        self.RFIDData.to_csv('RFIDData.csv', index=False)
         print(self.RFIDData)
+        print("Data saved to file RFIDData.csv")
 
 
 
