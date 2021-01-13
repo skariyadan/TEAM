@@ -23,7 +23,8 @@ class Parser():
                     self.mouseCount += 1
                     print(tag)
             except KeyboardInterrupt:
-                return
+                break
+        
 
 
     def scanId(self):
@@ -37,7 +38,7 @@ class Parser():
                     self.RFIDData = self.RFIDData.append({"Cage": cage, "Time":time, "ID": self.IDToName[id][1]}, ignore_index=True)
                     print(cage, time, id)
             except KeyboardInterrupt:
-                return
+                break
 
 
     def run(self):

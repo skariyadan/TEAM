@@ -3,10 +3,10 @@ import cli
 
 def main():
     cli.main()
-    '''
-    app = gui.Team_GUI()
-    app.run()
-    '''
+
+    #app = gui.Team_GUI()
+    #app.run()
+
 
 
 if __name__ == "__main__":

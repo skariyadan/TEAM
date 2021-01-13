@@ -81,7 +81,8 @@ class Merger():
     def merging(self):
         # finds start and end time by pairs then get the sum of the ci wheel data within these constraints
         for cage in self.rfid:
-            pairs = np.array_split(self.rfid[cage], self.rfid[cage].shape[0]/2)
+            #pairs = np.array_split(self.rfid[cage], self.rfid[cage].shape[0]/2)
+            pairs = self.create_pairs(cage)
             for pair in pairs:
                 # do an error check here to make sure the IDs are same also ensure the format of columns is good
                 id = pair.iloc[0, 2]
@@ -92,6 +93,26 @@ class Merger():
                 distance = wheelcount * (29/8) * math.pi * 0.00000254
                 velocity = (distance / (pd.Timedelta(end - start).seconds / 3600.0))
                 self.merged[cage] = self.merged[cage].append({'ID': id, 'Start Time': start, 'End Time': end, 'Wheel (counts)': wheelcount, 'Total Distance Traveled (km)': distance, 'Velocity (km/hr)': velocity}, ignore_index=True)
+
+    def create_pairs(self, cage):
+        cage_rfid = self.rfid[cage].copy()
+        selectflag = [True] * cage_rfid.shape[0]
+        pairs = []
+        for index, row in cage_rfid.iterrows():
+            if selectflag[index] is True:
+                selectflag[index] = False
+                cage_mask = cage_rfid.loc[selectflag]
+                cageval = row['Cage']
+                idval = row['ID']
+                try:
+                    pairmask = (cage_mask.Cage == cageval) & (cage_mask.ID==idval)
+                    pair = cage_mask.loc[pairmask].head(1)
+                    selectflag[pair.index.tolist()[0]] = False
+                    pairs.append(cage_rfid.iloc[[index, pair.index.tolist()[0]]])
+                except:
+                    pass
+        return pairs
+
 
     def cumulative(self, cage):
         by_mouse = pd.DataFrame(columns = ['ID', 'Cumulative Time (hr)', 'Cumulative Wheel (counts)', 'Cumulative Distance Traveled (km)', 'Average Velocity (km/hr)'])
