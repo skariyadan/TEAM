@@ -5,6 +5,7 @@ import math
 import xlsxwriter
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import datetime
 
 class Merger():
 
@@ -52,6 +53,7 @@ class Merger():
                              skiprows=rowcount,
                              usecols=['Int','Cage', 'Time', 'Wheel (counts)', 'Wheel Accum (counts)'],
                              parse_dates=['Time'])
+        print(self.ci)
         return 0
 
     def check_rfid_file(self):
@@ -63,6 +65,7 @@ class Merger():
         except:
             print('Invalid file')
             return -1
+        print(self.rfid)
         return 0
 
     def split_by_cage(self):
@@ -134,14 +137,14 @@ class Merger():
                xlabel = 'Time',
                ylabel = 'Activity Level')
         if (time_points[-1]-time_points[0]).days <= 0:
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%y\n%H:%M"))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%y\n%H:%M:%S"))
             ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=20))
-            ax.xaxis.set_minor_formatter(mdates.DateFormatter("%H:%M"))
+            ax.xaxis.set_minor_formatter(mdates.DateFormatter("%H:%M:%S"))
             ax.xaxis.set_minor_locator(mdates.MinuteLocator(interval=2))
         else:
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d-%y"))
             ax.xaxis.set_major_locator(mdates.DayLocator())
-            ax.xaxis.set_minor_formatter(mdates.DateFormatter("%H:%M"))
+            ax.xaxis.set_minor_formatter(mdates.DateFormatter("%H:%M:%S"))
             ax.xaxis.set_minor_locator(mdates.HourLocator(interval=4))
         plt.xticks(rotation=90, fontsize=6)
         plt.setp(ax.xaxis.get_minorticklabels(), rotation=90, fontsize=5)
