@@ -1,97 +1,19 @@
-# from flask import Flask, render_template, flash
-# from flask_bootstrap import Bootstrap
-# from flask_appconfig import AppConfig
-# from flask_wtf import Form, RecaptchaField
-# from flask_wtf.file import FileField
-# from wtforms import TextField, HiddenField, ValidationError, RadioField,\
-#     BooleanField, SubmitField, IntegerField, FormField, validators
-# from wtforms.validators import Required
-#
-#
-# # straight from the wtforms docs:
-# class TelephoneForm(Form):
-#     country_code = IntegerField('Country Code', [validators.required()])
-#     area_code = IntegerField('Area Code/Exchange', [validators.required()])
-#     number = TextField('Number')
-#
-#
-# class ExampleForm(Form):
-#     field1 = TextField('First Field', description='This is field one.')
-#     field2 = TextField('Second Field', description='This is field two.',
-#                        validators=[Required()])
-#     hidden_field = HiddenField('You cannot see this', description='Nope')
-#     recaptcha = RecaptchaField('A sample recaptcha field')
-#     radio_field = RadioField('This is a radio field', choices=[
-#         ('head_radio', 'Head radio'),
-#         ('radio_76fm', "Radio '76 FM"),
-#         ('lips_106', 'Lips 106'),
-#         ('wctr', 'WCTR'),
-#     ])
-#     checkbox_field = BooleanField('This is a checkbox',
-#                                   description='Checkboxes can be tricky.')
-#
-#     # subforms
-#     mobile_phone = FormField(TelephoneForm)
-#
-#     # you can change the label as well
-#     office_phone = FormField(TelephoneForm, label='Your office phone')
-#
-#     ff = FileField('Sample upload')
-#
-#     submit_button = SubmitField('Submit Form')
-#
-#
-#     def validate_hidden_field(form, field):
-#         raise ValidationError('Always wrong')
-#
-#
-# def create_app(configfile=None):
-#     app = Flask(__name__)
-#     AppConfig(app, configfile)  # Flask-Appconfig is not necessary, but
-#                                 # highly recommend =)
-#                                 # https://github.com/mbr/flask-appconfig
-#     Bootstrap(app)
-#
-#     # in a real app, these should be configured through Flask-Appconfig
-#     app.config['SECRET_KEY'] = 'devkey'
-#     app.config['RECAPTCHA_PUBLIC_KEY'] = \
-#         '6Lfol9cSAAAAADAkodaYl9wvQCwBMr3qGR_PPHcw'
-#
-#     @app.route('/', methods=('GET', 'POST'))
-#     def index():
-#         form = ExampleForm()
-#         form.validate_on_submit()  # to get error messages to the browser
-#         flash('critical message', 'critical')
-#         flash('error message', 'error')
-#         flash('warning message', 'warning')
-#         flash('info message', 'info')
-#         flash('debug message', 'debug')
-#         flash('different message', 'different')
-#         flash('uncategorized message')
-#         return render_template('index.html', form=form)
-#
-#     return app
-#
-# if __name__ == '__main__':
-#     create_app().run(debug=True)
-
 import tkinter as tk
 from PIL import ImageTk, Image
 import wx
 import time
 import serial
+import pandas as pd
+import datetime
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem
 from PySide6.QtGui import QIcon, QPixmap, QFont
 from PySide6.QtCore import Qt, QThread, QThreadPool, Signal
 import merger
-# will set up GUI later after figure out main data merging
 
 class Team_GUI(QMainWindow):
 
     def __init__(self, parent = None):
-        #self.app = QApplication()
-        #self.app.setWindowIcon(QIcon('mouse.PNG'))
         super(Team_GUI, self).__init__(parent)
         self.dialogs = list()
         self.front()
@@ -132,21 +54,13 @@ class Team_GUI(QMainWindow):
 
 
     def on_merge_clicked(self):
-        #dialog = Merge()
-        #self.dialogs.append(dialog)
-        #dialog.show()
         self.hide()
         mg = merger.Merger('resources/SreeSampleData.csv', 'resources/SreeRFIDData.csv')
         mg.merge()
 
     def on_serial_clicked(self):
         self.hide()
-        #dialog = SerialHome()
-        #self.dialogs.append(dialog)
-        #dialog.show()
 
-    def run(self):
-        self.app.exec_()
 
 
 class MergeHome(QMainWindow):
@@ -225,11 +139,10 @@ class SerialScan(QMainWindow):
     def __init__(self, serial, parent=None):
         super(SerialScan, self).__init__(parent)
         self.serial = serial
-        print(self.serial)
         self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.IdToName = {}
         self.front()
         self.mouseThread = ScanMouseIdThread(self.serial)
-        #self.sig = Signal(str)
         self.mouseThread.start()
         self.mouseThread.sig1.connect(self.on_info)
 
@@ -305,13 +218,19 @@ class SerialScan(QMainWindow):
         try:
             self.mouseThread.running = False
             time.sleep(2)
+            self.miceTable.clearSelection()
+            for row in range(self.miceTable.rowCount()):
+                if self.miceTable.item(row, 0) and self.miceTable.item(row, 1) and self.miceTable.item(row, 2):
+                    mouseId = self.miceTable.item(row, 0).text().strip()
+                    cage = int(self.miceTable.item(row, 1).text().strip())
+                    name = self.miceTable.item(row, 2).text().strip()
+                    self.IdToName[mouseId] = [cage, name]
             self.hide()
         except:
             pass
 
 class ScanMouseIdThread(QThread):
     sig1 = Signal(str)
-    count = 1
     def __init__(self, serial, parent=None):
         super(ScanMouseIdThread, self).__init__(parent)
         self.port = serial
@@ -323,6 +242,72 @@ class ScanMouseIdThread(QThread):
                 tag = rfid_reader.readline().decode('UTF-8').strip()
                 self.sig1.emit(tag)
                 time.sleep(1)
+
+class SerialExperiment(QMainWindow):
+    def __init__(self, IdToName, serial, parent=None):
+        super(SerialExperiment, self).__init__(parent)
+        self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.IdToName = IdToName
+        self.serial = serial
+        self.RFIDData = pd.DataFrame(columns=["Cage", "Time", "ID"])
+        self.mouseThread = ScanMouseIdThread(self.serial)
+        self.mouseThread.start()
+        self.mouseThread.sig1.connect(self.on_info)
+        self.front()
+
+    def front(self):
+        self.setGeometry(500, 500, 500, 500)
+        self.setWindowTitle("TEAM")
+        self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.setStyleSheet("background-color: #03795E")
+
+        grid = QGridLayout()
+
+        logo_title = QLabel("Serial Input", self)
+        font = QFont('Arial', 30)
+        font.setBold(True)
+        logo_title.setStyleSheet("QLabel {color: #fcba03}")
+        logo_title.setFont(font)
+        logo_title.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_title, 0, 1)
+
+        logo_instr = logo_title = QLabel("Experiment In Progress", self)
+        font = QFont('Arial', 30)
+        font.setBold(True)
+        logo_instr.setStyleSheet("QLabel {color: #fcba03}")
+        logo_instr.setFont(font)
+        logo_instr.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_instr, 1, 1)
+
+        self.back = QPushButton("Back", self)
+        self.back.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.back.clicked.connect(self.hide)
+        grid.addWidget(self.back, 4, 0, 1, 1)
+
+        self.start = QPushButton("Done", self)
+        self.start.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.start.clicked.connect(self.stopThread)
+        grid.addWidget(self.start, 4, 2, 1, 1)
+
+        central = QWidget()
+        central.setLayout(grid)
+        self.setCentralWidget(central)
+
+    def on_info(self, info):
+        id = info
+        time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+        cage = self.IDToName[id][0]
+        self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": time, "ID": self.IDToName[id][1]},
+                                             ignore_index=True)
+
+    def stopThread(self):
+        try:
+            self.mouseThread.running = False
+            time.sleep(2)
+            print(self.RFIDData)
+            self.hide()
+        except:
+            pass
 
 class Manager:
     def __init__(self):
@@ -342,4 +327,15 @@ class Manager:
         self.serial_scan = SerialScan(self.serial_home.serial.text())
         self.serial_scan.show()
         self.serial_scan.back.clicked.connect(self.serial_home.show)
+        self.serial_scan.start.clicked.connect(lambda: self.serialexperimentinit())
+
+    def serialexperimentinit(self):
+        if not self.serial_scan.isVisible():
+            self.serial_experiment = SerialExperiment(self.serial_scan.IdToName, self.serial_scan.serial)
+            self.serial_experiment.show()
+            self.serial_experiment.back.clicked.connect(self.serial_home.show)
+
+
+
+
 
