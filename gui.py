@@ -4,7 +4,8 @@ import wx
 import time
 import serial
 import pandas as pd
-import datetime
+from datetime import datetime
+import traceback
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem
 from PySide6.QtGui import QIcon, QPixmap, QFont
@@ -35,7 +36,7 @@ class Team_GUI(QMainWindow):
         grid.addWidget(logo_title, 0, 1)
 
         logo_label = QLabel(self)
-        logo_label.setPixmap(QPixmap('mouse.png').scaled(300, 300))
+        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
         grid.addWidget(logo_label, 1, 1)
 
         self.input_button = QPushButton("Serial Input", self)
@@ -217,7 +218,9 @@ class SerialScan(QMainWindow):
     def stopThread(self):
         try:
             self.mouseThread.running = False
-            time.sleep(2)
+            time.sleep(3)
+            #self.mouseThread.terminate()
+            #time.sleep(3)
             self.miceTable.clearSelection()
             for row in range(self.miceTable.rowCount()):
                 if self.miceTable.item(row, 0) and self.miceTable.item(row, 1) and self.miceTable.item(row, 2):
@@ -225,23 +228,27 @@ class SerialScan(QMainWindow):
                     cage = int(self.miceTable.item(row, 1).text().strip())
                     name = self.miceTable.item(row, 2).text().strip()
                     self.IdToName[mouseId] = [cage, name]
+            self.mouseThread.serial_port.close()
             self.hide()
         except:
-            pass
+            traceback.print_exc()
 
 class ScanMouseIdThread(QThread):
     sig1 = Signal(str)
-    def __init__(self, serial, parent=None):
+    def __init__(self, ser, parent=None):
         super(ScanMouseIdThread, self).__init__(parent)
-        self.port = serial
+        self.port = ser
+        self.serial_port = serial.Serial(self.port, 9600)
 
     def run(self):
         self.running = True
         while self.running:
-            with serial.Serial(self.port, 9600) as rfid_reader:
+            with self.serial_port as rfid_reader:
                 tag = rfid_reader.readline().decode('UTF-8').strip()
                 self.sig1.emit(tag)
                 time.sleep(1)
+
+
 
 class SerialExperiment(QMainWindow):
     def __init__(self, IdToName, serial, parent=None):
@@ -296,8 +303,8 @@ class SerialExperiment(QMainWindow):
     def on_info(self, info):
         id = info
         time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-        cage = self.IDToName[id][0]
-        self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": time, "ID": self.IDToName[id][1]},
+        cage = self.IdToName[id][0]
+        self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": time, "ID": self.IdToName[id][1]},
                                              ignore_index=True)
 
     def stopThread(self):
