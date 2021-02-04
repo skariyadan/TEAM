@@ -2,12 +2,16 @@ import tkinter as tk
 from PIL import ImageTk, Image
 import wx
 import time
+import os
+import sys
+import subprocess
+import webbrowser
 import serial
 import pandas as pd
 from datetime import datetime
 import traceback
 from PySide6 import QtWidgets
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QFileDialog
 from PySide6.QtGui import QIcon, QPixmap, QFont
 from PySide6.QtCore import Qt, QThread, QThreadPool, Signal
 import merger
@@ -18,7 +22,6 @@ class Team_GUI(QMainWindow):
         super(Team_GUI, self).__init__(parent)
         self.dialogs = list()
         self.front()
-
 
     def front(self):
         self.setGeometry(500, 500, 500, 500)
@@ -33,10 +36,12 @@ class Team_GUI(QMainWindow):
         font.setBold(True)
         logo_title.setStyleSheet("QLabel {color: #fcba03}")
         logo_title.setFont(font)
+        logo_title.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_title, 0, 1)
 
         logo_label = QLabel(self)
         logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_label, 1, 1)
 
         self.input_button = QPushButton("Serial Input", self)
@@ -53,7 +58,6 @@ class Team_GUI(QMainWindow):
         central.setLayout(grid)
         self.setCentralWidget(central)
 
-
     def on_merge_clicked(self):
         self.hide()
         mg = merger.Merger('resources/SreeSampleData.csv', 'resources/SreeRFIDData.csv')
@@ -61,8 +65,6 @@ class Team_GUI(QMainWindow):
 
     def on_serial_clicked(self):
         self.hide()
-
-
 
 class MergeHome(QMainWindow):
 
@@ -171,7 +173,6 @@ class SerialScan(QMainWindow):
         logo_instr.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_instr, 1, 1)
 
-
         self.miceTable = QTableWidget()
         self.miceTable.setStyleSheet("QTableWidget {background: #ffffff}")
         self.miceTable.setRowCount(1)
@@ -183,13 +184,6 @@ class SerialScan(QMainWindow):
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         self.miceTable.move(0, 0)
         grid.addWidget(self.miceTable, 2, 1)
-
-        '''
-        self.add = QPushButton("Add Mouse Row", self)
-        self.add.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
-        self.add.clicked.connect(lambda: self.addRow())
-        grid.addWidget(self.add, 3, 1, 1, 1)
-        '''
 
         self.back = QPushButton("Back", self)
         self.back.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
@@ -205,10 +199,6 @@ class SerialScan(QMainWindow):
         central.setLayout(grid)
         self.setCentralWidget(central)
 
-    def addRow(self):
-        rowPos = self.miceTable.rowCount()
-        self.miceTable.insertRow(rowPos)
-
     def on_info(self, info):
         rowPos = self.miceTable.rowCount() - 1
         item = QTableWidgetItem(info)
@@ -219,8 +209,6 @@ class SerialScan(QMainWindow):
         try:
             self.mouseThread.running = False
             time.sleep(3)
-            #self.mouseThread.terminate()
-            #time.sleep(3)
             self.miceTable.clearSelection()
             for row in range(self.miceTable.rowCount()):
                 if self.miceTable.item(row, 0) and self.miceTable.item(row, 1) and self.miceTable.item(row, 2):
@@ -247,7 +235,6 @@ class ScanMouseIdThread(QThread):
                 tag = rfid_reader.readline().decode('UTF-8').strip()
                 self.sig1.emit(tag)
                 time.sleep(1)
-
 
 
 class SerialExperiment(QMainWindow):
@@ -279,12 +266,17 @@ class SerialExperiment(QMainWindow):
         grid.addWidget(logo_title, 0, 1)
 
         logo_instr = logo_title = QLabel("Experiment In Progress", self)
-        font = QFont('Arial', 30)
+        font = QFont('Arial', 25)
         font.setBold(True)
         logo_instr.setStyleSheet("QLabel {color: #fcba03}")
         logo_instr.setFont(font)
         logo_instr.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_instr, 1, 1)
+
+        logo_label = QLabel(self)
+        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_label, 2, 1)
 
         self.back = QPushButton("Back", self)
         self.back.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
@@ -312,9 +304,83 @@ class SerialExperiment(QMainWindow):
             self.mouseThread.running = False
             time.sleep(2)
             print(self.RFIDData)
+            self.mouseThread.serial_port.close()
             self.hide()
         except:
             pass
+
+class SerialFinished(QMainWindow):
+    def __init__(self, RFIDData, parent=None):
+        super(SerialFinished, self).__init__(parent)
+        self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.RFIDData = RFIDData
+        self.saveLoc = ""
+        self.front()
+
+    def front(self):
+        self.setGeometry(500, 500, 500, 500)
+        self.setWindowTitle("TEAM")
+        self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.setStyleSheet("background-color: #03795E")
+
+        grid = QGridLayout()
+
+        logo_title = QLabel("Serial Input", self)
+        font = QFont('Arial', 30)
+        font.setBold(True)
+        logo_title.setStyleSheet("QLabel {color: #fcba03}")
+        logo_title.setFont(font)
+        logo_title.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_title, 0, 1)
+
+        logo_instr = logo_title = QLabel("Experiment Finished", self)
+        font = QFont('Arial', 25)
+        font.setBold(True)
+        logo_instr.setStyleSheet("QLabel {color: #fcba03}")
+        logo_instr.setFont(font)
+        logo_instr.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_instr, 1, 1)
+
+        logo_label = QLabel(self)
+        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_label, 2, 1)
+
+
+        self.back = QPushButton("Back", self)
+        self.back.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.back.clicked.connect(self.hide)
+        grid.addWidget(self.back, 4, 0, 1, 1)
+
+        self.save = QPushButton("Save File", self)
+        self.save.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.save.clicked.connect(self.saveFile)
+        grid.addWidget(self.save, 4, 1, 1, 1)
+
+        self.open = QPushButton("Open File", self)
+        self.open.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.open.clicked.connect(lambda: self.open_file(self.saveLoc))
+        self.open.setDisabled(True)
+        grid.addWidget(self.open, 4, 2, 1, 1)
+
+        central = QWidget()
+        central.setLayout(grid)
+        self.setCentralWidget(central)
+
+    def saveFile(self):
+        desktop = os.path.expanduser("~/Desktop")
+        file_today = "RFIDFILE_" + datetime.now().strftime("%m_%d_%Y__%H_%M") + ".csv"
+        dir_path = QFileDialog.getExistingDirectory(self, "Choose FilePath")
+        self.saveLoc = os.path.join(dir_path, file_today)
+        self.RFIDData.to_csv(self.saveLoc, index=False)
+        self.open.setDisabled(False)
+
+    def open_file(self, filename):
+        if sys.platform == "win32":
+            os.startfile(filename)
+        else:
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, filename])
 
 class Manager:
     def __init__(self):
@@ -326,7 +392,6 @@ class Manager:
         self.serial_home.back.clicked.connect(self.home.show)
         self.home.merge_button.clicked.connect(self.merge_home.show)
         self.serial_home.start.clicked.connect(lambda: self.serialscaninit())
-
 
         self.home.show()
 
@@ -341,8 +406,9 @@ class Manager:
             self.serial_experiment = SerialExperiment(self.serial_scan.IdToName, self.serial_scan.serial)
             self.serial_experiment.show()
             self.serial_experiment.back.clicked.connect(self.serial_home.show)
+            self.serial_experiment.start.clicked.connect(lambda: self.serialfinishedinit())
 
-
-
-
-
+    def serialfinishedinit(self):
+        self.serial_finished = SerialFinished(self.serial_experiment.RFIDData)
+        self.serial_finished.show()
+        self.serial_finished.back.clicked.connect(self.serial_home.show)
