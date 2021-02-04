@@ -293,17 +293,19 @@ class SerialExperiment(QMainWindow):
         self.setCentralWidget(central)
 
     def on_info(self, info):
-        id = info
-        time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-        cage = self.IdToName[id][0]
-        self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": time, "ID": self.IdToName[id][1]},
-                                             ignore_index=True)
+        try:
+            id = info
+            time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            cage = self.IdToName[id][0]
+            self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": time, "ID": self.IdToName[id][1]},
+                                                 ignore_index=True)
+        except:
+            pass
 
     def stopThread(self):
         try:
             self.mouseThread.running = False
             time.sleep(2)
-            print(self.RFIDData)
             self.mouseThread.serial_port.close()
             self.hide()
         except:
@@ -369,10 +371,10 @@ class SerialFinished(QMainWindow):
 
     def saveFile(self):
         desktop = os.path.expanduser("~/Desktop")
-        file_today = "RFIDFILE_" + datetime.now().strftime("%m_%d_%Y__%H_%M") + ".csv"
-        dir_path = QFileDialog.getExistingDirectory(self, "Choose FilePath")
+        file_today = "RFIDFILE_" + datetime.now().strftime("%m_%d_%Y__%H_%M") + ".xlsx"
+        dir_path = QFileDialog.getExistingDirectory(self, "Choose A Directory To Save File In")
         self.saveLoc = os.path.join(dir_path, file_today)
-        self.RFIDData.to_csv(self.saveLoc, index=False)
+        self.RFIDData.to_excel(self.saveLoc, index=False)
         self.open.setDisabled(False)
 
     def open_file(self, filename):
