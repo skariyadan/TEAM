@@ -23,7 +23,7 @@ class Merger():
             return -1
         self.split_by_cage()
         self.merging()
-        self.write_to_file()
+        #self.write_to_file()
         return 0
 
     def check_ci_file(self):
@@ -169,10 +169,10 @@ class Merger():
             plt.xticks(list(plt.xticks()[0]) + [list(plt.xticks()[0])[0] - diff, list(plt.xticks()[0])[-1] + diff])
         plt.savefig("plot.png")
 
-    def write_to_file(self):
+    def write_to_file(self, filename):
         # this function needs to be rewritten so there'll be a single file with multiple sheets
         # with each sheet represents a cage also with the raw data vs calculations julio wants
-        writer = pd.ExcelWriter('MouseData.xlsx', engine = 'xlsxwriter')
+        writer = pd.ExcelWriter(filename, engine = 'xlsxwriter')
         workbook = writer.book
         for cage in self.merged:
             worksheet = workbook.add_worksheet('Cage'+ str(cage) + '-Raw')
