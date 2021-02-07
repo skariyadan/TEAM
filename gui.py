@@ -71,6 +71,8 @@ class MergeHome(QMainWindow):
     def __init__(self, parent=None):
         super(MergeHome, self).__init__(parent)
         self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.rfid = ""
+        self.ci = ""
         self.front()
 
     def front(self):
@@ -78,6 +80,178 @@ class MergeHome(QMainWindow):
         self.setWindowTitle("TEAM")
         self.setWindowIcon(QIcon('resources/mouse.PNG'))
         self.setStyleSheet("background-color: #03795E")
+
+        grid = QGridLayout()
+
+        logo_title = QLabel("Merge Data", self)
+        font = QFont('Arial', 30)
+        font.setBold(True)
+        logo_title.setStyleSheet("QLabel {color: #fcba03}")
+        logo_title.setFont(font)
+        logo_title.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_title, 0, 1)
+
+        logo_instr = QLabel("Select files to merge:", self)
+        font = QFont('Arial', 15)
+        font.setBold(True)
+        logo_instr.setStyleSheet("QLabel {color: #fcba03}")
+        logo_instr.setFont(font)
+        logo_instr.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_instr, 1, 1)
+
+        rfid_instr = QLabel("Select RFID File:", self)
+        font = QFont('Arial', 10)
+        font.setBold(True)
+        rfid_instr.setStyleSheet("QLabel {color: #fcba03}")
+        rfid_instr.setFont(font)
+        rfid_instr.setAlignment(Qt.AlignCenter)
+        grid.addWidget(rfid_instr, 2, 1)
+
+        self.rfid_file = QLabel("", self)
+        font = QFont('Arial', 10)
+        font.setBold(True)
+        self.rfid_file.setStyleSheet("QLabel {color: #000000; background: #ffffff}")
+        self.rfid_file.setFont(font)
+        self.rfid_file.setAlignment(Qt.AlignCenter)
+        grid.addWidget(self.rfid_file, 3, 1)
+
+        self.rfid_select = QPushButton("Select RFID File", self)
+        self.rfid_select.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.rfid_select.clicked.connect(self.rfid_file_select)
+        grid.addWidget(self.rfid_select, 4, 1, 1, 1)
+
+        ci_instr = QLabel("Select Columbus Instruments Data File:", self)
+        font = QFont('Arial', 10)
+        font.setBold(True)
+        ci_instr.setStyleSheet("QLabel {color: #fcba03}")
+        ci_instr.setFont(font)
+        ci_instr.setAlignment(Qt.AlignCenter)
+        grid.addWidget(ci_instr, 5, 1)
+
+        self.ci_file = QLabel("", self)
+        font = QFont('Arial', 10)
+        font.setBold(True)
+        self.ci_file.setStyleSheet("QLabel {color: #000000; background: #ffffff}")
+        self.ci_file.setFont(font)
+        self.ci_file.setAlignment(Qt.AlignCenter)
+        grid.addWidget(self.ci_file, 6, 1)
+
+        self.ci_select = QPushButton("Select CI File", self)
+        self.ci_select.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.ci_select.clicked.connect(self.ci_file_select)
+        grid.addWidget(self.ci_select, 7, 1, 1, 1)
+
+
+        self.back = QPushButton("Back", self)
+        self.back.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.back.clicked.connect(self.hide)
+        grid.addWidget(self.back, 8, 0, 1, 1)
+
+        self.start = QPushButton("Start", self)
+        self.start.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.start.clicked.connect(self.merge)
+        self.start.setDisabled(True)
+        grid.addWidget(self.start, 8, 2, 1, 1)
+
+
+        central = QWidget()
+        central.setLayout(grid)
+        self.setCentralWidget(central)
+
+    def rfid_file_select(self):
+        self.rfid = QFileDialog.getOpenFileName(self, "RFID File")
+        self.rfid_file.setText(self.rfid[0])
+        if self.rfid != "" and self.ci != "":
+            self.start.setDisabled(False)
+        else:
+            self.start.setDisabled(True)
+        self.rfid = self.rfid[0]
+
+    def ci_file_select(self):
+        self.ci = QFileDialog.getOpenFileName(self, "CI File")
+        self.ci_file.setText(self.ci[0])
+        if self.rfid != "" and self.ci != "":
+            self.start.setDisabled(False)
+        else:
+            self.start.setDisabled(True)
+        self.ci = self.ci[0]
+
+    def merge(self):
+        self.merged = merger.Merger(self.ci, self.rfid)
+        self.merged.merge()
+        self.hide()
+
+class MergeFinished(QMainWindow):
+    def __init__(self, merged, parent=None):
+        super(MergeFinished, self).__init__(parent)
+        self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.merged = merged
+        self.saveLoc = ""
+        self.front()
+
+    def front(self):
+        self.setGeometry(500, 500, 500, 500)
+        self.setWindowTitle("TEAM")
+        self.setWindowIcon(QIcon('resources/mouse.PNG'))
+        self.setStyleSheet("background-color: #03795E")
+
+        grid = QGridLayout()
+
+        logo_title = QLabel("Merge Data", self)
+        font = QFont('Arial', 30)
+        font.setBold(True)
+        logo_title.setStyleSheet("QLabel {color: #fcba03}")
+        logo_title.setFont(font)
+        logo_title.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_title, 0, 1)
+
+        logo_instr = QLabel("Merging Finished", self)
+        font = QFont('Arial', 25)
+        font.setBold(True)
+        logo_instr.setStyleSheet("QLabel {color: #fcba03}")
+        logo_instr.setFont(font)
+        logo_instr.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_instr, 1, 1)
+
+        logo_label = QLabel(self)
+        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setAlignment(Qt.AlignCenter)
+        grid.addWidget(logo_label, 2, 1)
+
+
+        self.back = QPushButton("Back", self)
+        self.back.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.back.clicked.connect(self.hide)
+        grid.addWidget(self.back, 4, 0, 1, 1)
+
+        self.save = QPushButton("Save File", self)
+        self.save.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.save.clicked.connect(self.saveFile)
+        grid.addWidget(self.save, 4, 1, 1, 1)
+
+        self.open = QPushButton("Open File", self)
+        self.open.setStyleSheet("QPushButton:hover:!pressed{ background: #fcba03}")
+        self.open.clicked.connect(lambda: self.open_file(self.saveLoc))
+        self.open.setDisabled(True)
+        grid.addWidget(self.open, 4, 2, 1, 1)
+
+        central = QWidget()
+        central.setLayout(grid)
+        self.setCentralWidget(central)
+
+    def saveFile(self):
+        file_today = "Merged_" + datetime.now().strftime("%m_%d_%Y__%H_%M") + ".xlsx"
+        dir_path = QFileDialog.getExistingDirectory(self, "Choose A Directory To Save File In")
+        self.saveLoc = os.path.join(dir_path, file_today)
+        self.merged.write_to_file(self.saveLoc)
+        self.open.setDisabled(False)
+
+    def open_file(self, filename):
+        if sys.platform == "win32":
+            os.startfile(filename)
+        else:
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, filename])
 
 class SerialHome(QMainWindow):
     def __init__(self, parent=None):
@@ -101,7 +275,7 @@ class SerialHome(QMainWindow):
         logo_title.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_title, 0, 1)
 
-        logo_instr = logo_title = QLabel("Enter serial port to read tags from:", self)
+        logo_instr = QLabel("Enter serial port to read tags from:", self)
         font = QFont('Arial', 15)
         font.setBold(True)
         logo_instr.setStyleSheet("QLabel {color: #fcba03}")
@@ -112,7 +286,6 @@ class SerialHome(QMainWindow):
         self.serial = QLineEdit()
         font = QFont('Arial', 15)
         self.serial.setFont(font)
-        #self.serial.setAlignment(Qt.AlignTop)
         self.serial.setStyleSheet("QLineEdit {background: #ffffff}")
         grid.addWidget(self.serial, 2, 1)
         grid.setAlignment(self.serial, Qt.AlignTop)
@@ -165,7 +338,7 @@ class SerialScan(QMainWindow):
         logo_title.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_title, 0, 1)
 
-        logo_instr = logo_title = QLabel("Scan mouse tags, enter what cage they are for, and their name:", self)
+        logo_instr = QLabel("Scan mouse tags, enter what cage they are for, and their name:", self)
         font = QFont('Arial', 15)
         font.setBold(True)
         logo_instr.setStyleSheet("QLabel {color: #fcba03}")
@@ -265,7 +438,7 @@ class SerialExperiment(QMainWindow):
         logo_title.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_title, 0, 1)
 
-        logo_instr = logo_title = QLabel("Experiment In Progress", self)
+        logo_instr = QLabel("Experiment In Progress", self)
         font = QFont('Arial', 25)
         font.setBold(True)
         logo_instr.setStyleSheet("QLabel {color: #fcba03}")
@@ -335,7 +508,7 @@ class SerialFinished(QMainWindow):
         logo_title.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_title, 0, 1)
 
-        logo_instr = logo_title = QLabel("Experiment Finished", self)
+        logo_instr = QLabel("Experiment Finished", self)
         font = QFont('Arial', 25)
         font.setBold(True)
         logo_instr.setStyleSheet("QLabel {color: #fcba03}")
@@ -370,7 +543,6 @@ class SerialFinished(QMainWindow):
         self.setCentralWidget(central)
 
     def saveFile(self):
-        desktop = os.path.expanduser("~/Desktop")
         file_today = "RFIDFILE_" + datetime.now().strftime("%m_%d_%Y__%H_%M") + ".xlsx"
         dir_path = QFileDialog.getExistingDirectory(self, "Choose A Directory To Save File In")
         self.saveLoc = os.path.join(dir_path, file_today)
@@ -394,6 +566,8 @@ class Manager:
         self.serial_home.back.clicked.connect(self.home.show)
         self.home.merge_button.clicked.connect(self.merge_home.show)
         self.serial_home.start.clicked.connect(lambda: self.serialscaninit())
+        self.merge_home.back.clicked.connect(self.home.show)
+        self.merge_home.start.clicked.connect(lambda: self.mergefinishedinit())
 
         self.home.show()
 
@@ -414,3 +588,8 @@ class Manager:
         self.serial_finished = SerialFinished(self.serial_experiment.RFIDData)
         self.serial_finished.show()
         self.serial_finished.back.clicked.connect(self.serial_home.show)
+
+    def mergefinishedinit(self):
+        self.merge_finished = MergeFinished(self.merge_home.merged)
+        self.merge_finished.show()
+        self.merge_finished.back.clicked.connect(self.merge_home.show)
