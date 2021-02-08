@@ -186,6 +186,7 @@ class MergeFinished(QMainWindow):
         super(MergeFinished, self).__init__(parent)
         self.setWindowIcon(QIcon('resources/mouse.PNG'))
         self.merged = merged
+        print(self.merged.merged)
         self.saveLoc = ""
         self.front()
 
@@ -587,9 +588,9 @@ class Manager:
     def serialfinishedinit(self):
         self.serial_finished = SerialFinished(self.serial_experiment.RFIDData)
         self.serial_finished.show()
-        self.serial_finished.back.clicked.connect(self.serial_home.show)
+        self.serial_finished.back.clicked.connect(self.home.show)
 
     def mergefinishedinit(self):
         self.merge_finished = MergeFinished(self.merge_home.merged)
         self.merge_finished.show()
-        self.merge_finished.back.clicked.connect(self.merge_home.show)
+        self.merge_finished.back.clicked.connect(self.home.show)

@@ -49,23 +49,32 @@ class Merger():
         if dataflag == 0:
             print("Improper file format")
             return -1
-        self.ci = pd.read_csv(self.ci_fp,
-                             skiprows=rowcount,
-                             usecols=['Int','Cage', 'Time', 'Wheel (counts)', 'Wheel Accum (counts)'],
-                             parse_dates=['Time'])
-        print(self.ci)
+        if self.ci_fp.endswith('.csv'):
+            self.ci = pd.read_csv(self.ci_fp,
+                                  skiprows=rowcount,
+                                  usecols=['Int','Cage', 'Time', 'Wheel (counts)', 'Wheel Accum (counts)'],
+                                  parse_dates=['Time'])
+        elif self.ci_fp.endswith('.xlsx'):
+            self.ci = pd.read_excel(self.ci_fp,
+                                    skiprows=rowcount,
+                                    usecols=['Int', 'Cage', 'Time', 'Wheel (counts)', 'Wheel Accum (counts)'],
+                                    parse_dates=['Time'])
         return 0
 
     def check_rfid_file(self):
         # read the rfid file check if exists
         try:
-            self.rfid = pd.read_csv(self.rfid_fp,
-                                   usecols=['Cage', 'Time', 'ID'],
-                                   parse_dates=['Time'])
+            if self.rfid_fp.endswith('.csv'):
+                self.rfid = pd.read_csv(self.rfid_fp,
+                                        usecols=['Cage', 'Time', 'ID'],
+                                        parse_dates=['Time'])
+            elif self.rfid_fp.endswith('.xlsx'):
+                self.rfid = pd.read_excel(self.rfid_fp,
+                                          usecols=['Cage', 'Time', 'ID'],
+                                          parse_dates=['Time'])
         except:
             print('Invalid file')
             return -1
-        print(self.rfid)
         return 0
 
     def split_by_cage(self):
