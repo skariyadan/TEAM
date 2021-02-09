@@ -6,6 +6,9 @@ import xlsxwriter
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime
+import traceback
+import xlrd
+import openpyxl
 
 class Merger():
 
@@ -58,7 +61,8 @@ class Merger():
             self.ci = pd.read_excel(self.ci_fp,
                                     skiprows=rowcount,
                                     usecols=['Int', 'Cage', 'Time', 'Wheel (counts)', 'Wheel Accum (counts)'],
-                                    parse_dates=['Time'])
+                                    parse_dates=['Time'],
+                                    engine='openpyxl')
         return 0
 
     def check_rfid_file(self):
@@ -69,10 +73,13 @@ class Merger():
                                         usecols=['Cage', 'Time', 'ID'],
                                         parse_dates=['Time'])
             elif self.rfid_fp.endswith('.xlsx'):
+                print("here")
                 self.rfid = pd.read_excel(self.rfid_fp,
-                                          usecols=['Cage', 'Time', 'ID'],
-                                          parse_dates=['Time'])
+                                        usecols=['Cage', 'Time', 'ID'],
+                                        parse_dates=['Time'],
+                                        engine='openpyxl')
         except:
+            traceback.print_exc()
             print('Invalid file')
             return -1
         return 0
@@ -176,7 +183,8 @@ class Merger():
         if len(list(plt.xticks()[0])) > 1:
             diff = (list(plt.xticks()[0])[-1] - list(plt.xticks()[0])[0]) / (len(list(plt.xticks()[0])) - 1)
             plt.xticks(list(plt.xticks()[0]) + [list(plt.xticks()[0])[0] - diff, list(plt.xticks()[0])[-1] + diff])
-        plt.savefig("plot.png")
+        plot = "plot" + str(cage) + ".png"
+        plt.savefig(plot)
 
     def write_to_file(self, filename):
         # this function needs to be rewritten so there'll be a single file with multiple sheets
@@ -195,7 +203,8 @@ class Merger():
             worksheet.write_string(self.merged[cage].shape[0] + 4, 0, "Cumulative Data")
             self.cumulative(cage).to_excel(writer, sheet_name='Cage' + str(cage) + '-Calculations', startrow=self.merged[cage].shape[0] + 5, startcol=0, index=False)
             self.graph(cage)
-            worksheet.insert_image(0, self.merged[cage].shape[1] + 5, "plot.png")
+            plot = "plot" + str(cage) + ".png"
+            worksheet.insert_image(0, self.merged[cage].shape[1] + 5, plot)
         writer.save()
 
 

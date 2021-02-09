@@ -1,12 +1,12 @@
 import gui
 import cli
+import merger
 import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 
 def main():
     #cli.main()
-
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon('mouse.PNG'))
     manager = gui.Manager()
