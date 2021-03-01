@@ -2,8 +2,8 @@ import gui
 import cli
 import merger
 import sys
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QIcon
 
 def main():
     #cli.main()

@@ -10,10 +10,10 @@ import serial
 import pandas as pd
 from datetime import datetime
 import traceback
-from PySide6 import QtWidgets
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QFileDialog
-from PySide6.QtGui import QIcon, QPixmap, QFont
-from PySide6.QtCore import Qt, QThread, QThreadPool, Signal
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QFileDialog
+from PyQt5.QtGui import QIcon, QPixmap, QFont
+from PyQt5.QtCore import Qt, QThread, QThreadPool, pyqtSignal
 import merger
 
 class Team_GUI(QMainWindow):
@@ -396,7 +396,7 @@ class SerialScan(QMainWindow):
             traceback.print_exc()
 
 class ScanMouseIdThread(QThread):
-    sig1 = Signal(str)
+    sig1 = pyqtSignal(str)
     def __init__(self, ser, parent=None):
         super(ScanMouseIdThread, self).__init__(parent)
         self.port = ser
