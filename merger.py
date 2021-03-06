@@ -115,21 +115,16 @@ class Merger():
 
     def create_pairs(self, cage):
         cage_rfid = self.rfid[cage].copy()
-        selectflag = [True] * cage_rfid.shape[0]
         pairs = []
+        if len(cage_rfid.index) == 0:
+            return pairs
+        first = self.rfid[cage].iloc[[0]]
         for index, row in cage_rfid.iterrows():
-            if selectflag[index] is True:
-                selectflag[index] = False
-                cage_mask = cage_rfid.loc[selectflag]
-                cageval = row['Cage']
-                idval = row['ID']
-                try:
-                    pairmask = (cage_mask.Cage == cageval) & (cage_mask.ID==idval)
-                    pair = cage_mask.loc[pairmask].head(1)
-                    selectflag[pair.index.tolist()[0]] = False
-                    pairs.append(cage_rfid.iloc[[index, pair.index.tolist()[0]]])
-                except:
-                    pass
+            if row['ID'] != first.iloc[0,2]:
+                pairs.append(cage_rfid.iloc[[first.index.tolist()[0], index]])
+                first = self.rfid[cage].iloc[[index]]
+        second = cage_rfid.iloc[[-1]]
+        pairs.append(cage_rfid.iloc[[first.index.tolist()[0], -1]])
         return pairs
 
 
