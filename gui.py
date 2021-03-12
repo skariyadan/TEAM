@@ -6,7 +6,7 @@ import os
 import sys
 import subprocess
 import webbrowser
-import serial
+from serial import Serial
 import pandas as pd
 from datetime import datetime
 import traceback
@@ -15,6 +15,12 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWid
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtCore import Qt, QThread, QThreadPool, pyqtSignal
 import merger
+
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 class Team_GUI(QMainWindow):
 
@@ -40,7 +46,7 @@ class Team_GUI(QMainWindow):
         grid.addWidget(logo_title, 0, 1)
 
         logo_label = QLabel(self)
-        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setPixmap(QPixmap(resource_path("mouse.png")).scaled(400, 400))
         logo_label.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_label, 1, 1)
 
@@ -60,8 +66,6 @@ class Team_GUI(QMainWindow):
 
     def on_merge_clicked(self):
         self.hide()
-        mg = merger.Merger('resources/SreeSampleData.csv', 'resources/SreeRFIDData.csv')
-        mg.merge()
 
     def on_serial_clicked(self):
         self.hide()
@@ -215,7 +219,7 @@ class MergeFinished(QMainWindow):
         grid.addWidget(logo_instr, 1, 1)
 
         logo_label = QLabel(self)
-        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setPixmap(QPixmap(resource_path("mouse.png")).scaled(400, 400))
         logo_label.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_label, 2, 1)
 
@@ -400,7 +404,7 @@ class ScanMouseIdThread(QThread):
     def __init__(self, ser, parent=None):
         super(ScanMouseIdThread, self).__init__(parent)
         self.port = ser
-        self.serial_port = serial.Serial(self.port, 9600)
+        self.serial_port = Serial(self.port, 9600)
 
     def run(self):
         self.running = True
@@ -408,6 +412,8 @@ class ScanMouseIdThread(QThread):
             with self.serial_port as rfid_reader:
                 tag = rfid_reader.readline().decode('UTF-8').strip()
                 self.sig1.emit(tag)
+                print(tag)
+                print(datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
                 time.sleep(1)
 
 
@@ -448,7 +454,7 @@ class SerialExperiment(QMainWindow):
         grid.addWidget(logo_instr, 1, 1)
 
         logo_label = QLabel(self)
-        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setPixmap(QPixmap(resource_path("mouse.png")).scaled(400, 400))
         logo_label.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_label, 2, 1)
 
@@ -481,12 +487,12 @@ class SerialExperiment(QMainWindow):
             self.mouseThread.running = False
             time.sleep(2)
             self.mouseThread.serial_port.close()
-            self.hide()
-            time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            finaltime = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
             id = self.RFIDData["ID"].iloc[-1]
-            cage = self.IdToName[id][0]
-            self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": time, "ID": self.IdToName[id][1]},
+            cage = self.RFIDData["Cage"].iloc[-1]
+            self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": finaltime, "ID": id},
                                                  ignore_index=True)
+            self.hide()
         except:
             pass
 
@@ -523,7 +529,7 @@ class SerialFinished(QMainWindow):
         grid.addWidget(logo_instr, 1, 1)
 
         logo_label = QLabel(self)
-        logo_label.setPixmap(QPixmap('mouse.png').scaled(400, 400))
+        logo_label.setPixmap(QPixmap(resource_path("mouse.png")).scaled(400, 400))
         logo_label.setAlignment(Qt.AlignCenter)
         grid.addWidget(logo_label, 2, 1)
 
