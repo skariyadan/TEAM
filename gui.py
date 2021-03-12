@@ -482,6 +482,11 @@ class SerialExperiment(QMainWindow):
             time.sleep(2)
             self.mouseThread.serial_port.close()
             self.hide()
+            time = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            id = self.RFIDData["ID"].iloc[-1]
+            cage = self.IdToName[id][0]
+            self.RFIDData = self.RFIDData.append({"Cage": cage, "Time": time, "ID": self.IdToName[id][1]},
+                                                 ignore_index=True)
         except:
             pass
 
